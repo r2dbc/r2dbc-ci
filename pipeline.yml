@@ -1,0 +1,69 @@
+---
+resource_types:
+- name: artifactory-resource
+  type: docker-image
+  source:
+    repository: springio/artifactory-resource
+    tag:        0.0.4
+
+- name: github-status
+  type: docker-image
+  source:
+    repository: dpb587/github-status-resource
+    tag:        master
+
+resources:
+- name: r2dbc-spi
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-spi.git
+
+- name: r2dbc-spi-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC SPI
+
+- name: r2dbc-spi-status
+  type: github-status
+  source:
+    access_token: ((access-token))
+    repository:   r2dbc/r2dbc-spi
+
+jobs:
+- name: r2dbc-spi
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-spi
+    trigger: true
+  - put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  pending
+  - task: build
+    file: r2dbc-spi/ci/build.yml
+  - put: r2dbc-spi-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      disable_checksum_uploads: true
+      repo:                     libs-snapshot-local
+      folder:                   distribution-repository
+  on_abort:
+    put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  error
+  on_failure:
+    put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  failure
+  on_success:
+    put: r2dbc-spi-status
+    params:
+      state:  success
+      commit: r2dbc-spi
