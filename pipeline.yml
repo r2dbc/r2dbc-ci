@@ -13,6 +13,48 @@ resource_types:
     tag:        master
 
 resources:
+- name: openjdk:8-jdk
+  type: docker-image
+  source:
+    repository: openjdk
+    tag:        8-jdk
+
+- name: r2dbc-postgresql:latest
+  type: docker-image
+  source:
+    repository: r2dbc/r2dbc-postgresql
+    email:      ((docker-email))
+    username:   ((docker-username))
+    password:   ((docker-password))
+
+- name: r2dbc-postgresql
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-postgresql.git
+    ignore_paths:
+    - ci/docker-image/*
+
+- name: r2dbc-postgresql-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC PostgreSQL
+
+- name: r2dbc-postgresql-docker-image
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-postgresql.git
+    paths:
+    - ci/docker-image/*
+
+- name: r2dbc-postgresql-status
+  type: github-status
+  source:
+    access_token: ((github-access-token))
+    repository:   r2dbc/r2dbc-postgresql
+
 - name: r2dbc-spi
   type: git
   source:
@@ -29,10 +71,72 @@ resources:
 - name: r2dbc-spi-status
   type: github-status
   source:
-    access_token: ((access-token))
+    access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-spi
 
+groups:
+- name: r2dbc
+  jobs:
+  - r2dbc-postgresql
+  - r2dbc-spi
+- name: docker
+  jobs:
+  - r2dbc-postgresql:latest
+
 jobs:
+- name: r2dbc-postgresql:latest
+  public: true
+  plan:
+  - aggregate:
+    - get: r2dbc-postgresql-docker-image
+      trigger: true
+    - get: openjdk:8-jdk
+      trigger: true
+  - put: r2dbc-postgresql:latest
+    params:
+      build: r2dbc-postgresql-docker-image/ci/docker-image
+
+- name: r2dbc-postgresql
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+    params:
+      save_build_info: true
+  - put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  pending
+  - task: build
+    file: r2dbc-postgresql/ci/build.yml
+  - put: r2dbc-postgresql-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      disable_checksum_uploads: true
+      repo:                     libs-snapshot-local
+      folder:                   r2dbc-postgresql-artifactory
+  on_abort:
+    put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  error
+  on_failure:
+    put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  failure
+  on_success:
+    put: r2dbc-postgresql-status
+    params:
+      state:  success
+      commit: r2dbc-postgresql
+
 - name: r2dbc-spi
   serial: true
   public: true
@@ -51,7 +155,7 @@ jobs:
       build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
       disable_checksum_uploads: true
       repo:                     libs-snapshot-local
-      folder:                   distribution-repository
+      folder:                   r2dbc-spi-artifactory
   on_abort:
     put: r2dbc-spi-status
     params:
