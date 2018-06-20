@@ -107,7 +107,8 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
+      download_artifacts:      true
+      generate_maven_metadata: true
   - put: r2dbc-postgresql-status
     params:
       commit: r2dbc-postgresql
