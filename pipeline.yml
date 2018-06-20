@@ -107,7 +107,7 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      save_build_info: true
+      download_artifacts: true
   - put: r2dbc-postgresql-status
     params:
       commit: r2dbc-postgresql
