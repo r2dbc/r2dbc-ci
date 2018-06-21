@@ -108,6 +108,7 @@ jobs:
     - r2dbc-spi
     params:
       download_artifacts: true
+      save_build_info:    true
   - put: r2dbc-postgresql-status
     params:
       commit: r2dbc-postgresql
@@ -118,7 +119,6 @@ jobs:
     params:
       build_number:             ${BUILD_NAME}
       build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      disable_checksum_uploads: true
       repo:                     libs-snapshot-local
       folder:                   r2dbc-postgresql-artifactory
   on_abort:
@@ -153,7 +153,6 @@ jobs:
     params:
       build_number:             ${BUILD_NAME}
       build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      disable_checksum_uploads: true
       repo:                     libs-snapshot-local
       folder:                   r2dbc-spi-artifactory
   on_abort:
