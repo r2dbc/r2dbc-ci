@@ -19,6 +19,42 @@ resources:
     repository: openjdk
     tag:        8-jdk
 
+- name: r2dbc-client:latest
+  type: docker-image
+  source:
+    repository: r2dbc/r2dbc-client
+    email:      ((docker-email))
+    username:   ((docker-username))
+    password:   ((docker-password))
+
+- name: r2dbc-client
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-client.git
+    ignore_paths:
+    - ci/docker-image/*
+
+- name: r2dbc-client-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC Client
+
+- name: r2dbc-client-docker-image
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-client.git
+    paths:
+    - ci/docker-image/*
+
+- name: r2dbc-client-status
+  type: github-status
+  source:
+    access_token: ((github-access-token))
+    repository:   r2dbc/r2dbc-client
+
 - name: r2dbc-postgresql:latest
   type: docker-image
   source:
@@ -77,13 +113,27 @@ resources:
 groups:
 - name: r2dbc
   jobs:
+  - r2dbc-client
   - r2dbc-postgresql
   - r2dbc-spi
 - name: docker
   jobs:
+  - r2dbc-client:latest
   - r2dbc-postgresql:latest
 
 jobs:
+- name: r2dbc-client:latest
+  public: true
+  plan:
+  - aggregate:
+    - get: r2dbc-client-docker-image
+      trigger: true
+    - get: openjdk:8-jdk
+      trigger: true
+  - put: r2dbc-client:latest
+    params:
+      build: r2dbc-client-docker-image/ci/docker-image
+
 - name: r2dbc-postgresql:latest
   public: true
   plan:
@@ -95,6 +145,55 @@ jobs:
   - put: r2dbc-postgresql:latest
     params:
       build: r2dbc-postgresql-docker-image/ci/docker-image
+
+- name: r2dbc-client
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-client
+    trigger: true
+  - get: r2dbc-postgresql-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+    - r2dbc-spi
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  pending
+  - task: build
+    file: r2dbc-client/ci/build.yml
+  - put: r2dbc-client-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-snapshot-local
+      folder:                   r2dbc-client-artifactory
+  on_abort:
+    put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  error
+  on_failure:
+    put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  failure
+  on_success:
+    put: r2dbc-client-status
+    params:
+      state:  success
+      commit: r2dbc-client
 
 - name: r2dbc-postgresql
   serial: true
