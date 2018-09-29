@@ -49,11 +49,44 @@ resources:
     paths:
     - ci/docker-image/*
 
+- name: r2dbc-client-release
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-client.git
+    branch: release
+    ignore_paths:
+    - ci/docker-image/*
+
 - name: r2dbc-client-status
   type: github-status
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-client
+
+- name: r2dbc-h2
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-h2.git
+
+- name: r2dbc-h2-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC H2
+
+- name: r2dbc-h2-release
+  type: git
+  source:
+    uri:    https://github.com/r2dbc/r2dbc-h2.git
+    branch: release
+
+- name: r2dbc-h2-status
+  type: github-status
+  source:
+    access_token: ((github-access-token))
+    repository:   r2dbc/r2dbc-h2
 
 - name: r2dbc-postgresql:latest
   type: docker-image
@@ -85,6 +118,14 @@ resources:
     paths:
     - ci/docker-image/*
 
+- name: r2dbc-postgresql-release
+  type: git
+  source:
+    uri:    https://github.com/r2dbc/r2dbc-postgresql.git
+    branch: release
+    ignore_paths:
+    - ci/docker-image/*
+
 - name: r2dbc-postgresql-status
   type: github-status
   source:
@@ -104,6 +145,12 @@ resources:
     password: ((artifactory-password))
     build_name: R2DBC SPI
 
+- name: r2dbc-spi-release
+  type: git
+  source:
+    uri:    https://github.com/r2dbc/r2dbc-spi.git
+    branch: release
+
 - name: r2dbc-spi-status
   type: github-status
   source:
@@ -114,8 +161,15 @@ groups:
 - name: r2dbc
   jobs:
   - r2dbc-client
+  - r2dbc-h2
   - r2dbc-postgresql
   - r2dbc-spi
+- name: release
+  jobs:
+  - r2dbc-client-release
+  - r2dbc-h2-release
+  - r2dbc-postgresql-release
+  - r2dbc-spi-release
 - name: docker
   jobs:
   - r2dbc-client:latest
@@ -195,6 +249,117 @@ jobs:
       state:  success
       commit: r2dbc-client
 
+- name: r2dbc-client-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-client
+    resource: r2dbc-client-release
+    trigger: true
+  - put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  pending
+  - task: build
+    file: r2dbc-client/ci/release.yml
+  - put: r2dbc-client-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
+      folder:                   r2dbc-client-artifactory
+  on_abort:
+    put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  error
+  on_failure:
+    put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  failure
+  on_success:
+    put: r2dbc-client-status
+    params:
+      state:  success
+      commit: r2dbc-client
+
+- name: r2dbc-h2
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-h2
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  pending
+  - task: build
+    file: r2dbc-h2/ci/build.yml
+  - put: r2dbc-h2-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-snapshot-local
+      folder:                   r2dbc-h2-artifactory
+  on_abort:
+    put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  error
+  on_failure:
+    put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  failure
+  on_success:
+    put: r2dbc-h2-status
+    params:
+      state:  success
+      commit: r2dbc-h2
+
+- name: r2dbc-h2-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-h2
+    resource: r2dbc-h2-release
+    trigger: true
+  - put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  pending
+  - task: build
+    file: r2dbc-h2/ci/release.yml
+  - put: r2dbc-h2-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
+      folder:                   r2dbc-h2-artifactory
+  on_abort:
+    put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  error
+  on_failure:
+    put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  failure
+  on_success:
+    put: r2dbc-h2-status
+    params:
+      state:  success
+      commit: r2dbc-h2
+
 - name: r2dbc-postgresql
   serial: true
   public: true
@@ -236,6 +401,41 @@ jobs:
       state:  success
       commit: r2dbc-postgresql
 
+- name: r2dbc-postgresql-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    resource: r2dbc-postgresql-release
+    trigger: true
+  - put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  pending
+  - task: build
+    file: r2dbc-postgresql/ci/release.yml
+  - put: r2dbc-postgresql-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
+      folder:                   r2dbc-postgresql-artifactory
+  on_abort:
+    put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  error
+  on_failure:
+    put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  failure
+  on_success:
+    put: r2dbc-postgresql-status
+    params:
+      state:  success
+      commit: r2dbc-postgresql
+
 - name: r2dbc-spi
   serial: true
   public: true
@@ -253,6 +453,41 @@ jobs:
       build_number:             ${BUILD_NAME}
       build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
       repo:                     libs-snapshot-local
+      folder:                   r2dbc-spi-artifactory
+  on_abort:
+    put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  error
+  on_failure:
+    put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  failure
+  on_success:
+    put: r2dbc-spi-status
+    params:
+      state:  success
+      commit: r2dbc-spi
+
+- name: r2dbc-spi-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-spi
+    resource: r2dbc-spi-release
+    trigger: true
+  - put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  pending
+  - task: build
+    file: r2dbc-spi/ci/release.yml
+  - put: r2dbc-spi-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
       folder:                   r2dbc-spi-artifactory
   on_abort:
     put: r2dbc-spi-status
