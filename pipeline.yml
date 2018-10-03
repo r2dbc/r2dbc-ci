@@ -330,6 +330,10 @@ jobs:
     params:
       download_artifacts: true
       save_build_info:    true
+  - put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: pending
   - task: build
     file: r2dbc-client/ci/build.yml
   on_failure:
@@ -451,6 +455,10 @@ jobs:
     params:
       download_artifacts: true
       save_build_info:    true
+  - put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: pending
   - task: build
     file: r2dbc-h2/ci/build.yml
   on_failure:
@@ -572,6 +580,10 @@ jobs:
     params:
       download_artifacts: true
       save_build_info:    true
+  - put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: pending
   - task: build
     file: r2dbc-postgresql/ci/build.yml
   on_failure:
@@ -679,6 +691,10 @@ jobs:
     resource: r2dbc-spi-pull-requests
     trigger: true
     version: every
+  - put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: pending
   - task: build
     file: r2dbc-spi/ci/build.yml
   on_failure:
