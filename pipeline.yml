@@ -12,6 +12,11 @@ resource_types:
     repository: dpb587/github-status-resource
     tag:        master
 
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: nebhale/slack-notification-resource
+
 resources:
 - name: openjdk:8-jdk
   type: docker-image
@@ -157,6 +162,11 @@ resources:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-spi
 
+- name: slack
+  type: slack-notification
+  source:
+    url: ((slack))
+
 groups:
 - name: r2dbc
   jobs:
@@ -239,10 +249,19 @@ jobs:
       commit: r2dbc-client
       state:  error
   on_failure:
-    put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  failure
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-client-status
     params:
@@ -274,10 +293,19 @@ jobs:
       commit: r2dbc-client
       state:  error
   on_failure:
-    put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  failure
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-client-status
     params:
@@ -315,10 +343,19 @@ jobs:
       commit: r2dbc-h2
       state:  error
   on_failure:
-    put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  failure
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-h2-status
     params:
@@ -350,10 +387,19 @@ jobs:
       commit: r2dbc-h2
       state:  error
   on_failure:
-    put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  failure
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-h2-status
     params:
@@ -391,10 +437,19 @@ jobs:
       commit: r2dbc-postgresql
       state:  error
   on_failure:
-    put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  failure
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-postgresql-status
     params:
@@ -426,10 +481,19 @@ jobs:
       commit: r2dbc-postgresql
       state:  error
   on_failure:
-    put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  failure
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-postgresql-status
     params:
@@ -460,10 +524,19 @@ jobs:
       commit: r2dbc-spi
       state:  error
   on_failure:
-    put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  failure
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-spi-status
     params:
@@ -495,12 +568,22 @@ jobs:
       commit: r2dbc-spi
       state:  error
   on_failure:
-    put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  failure
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-spi-status
     params:
       state:  success
       commit: r2dbc-spi
+
