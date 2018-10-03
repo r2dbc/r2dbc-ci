@@ -12,6 +12,12 @@ resource_types:
     repository: dpb587/github-status-resource
     tag:        master
 
+- name: pull-request
+  type: docker-image
+  source:
+    repository: jtarchie/pr
+    tag:        latest
+
 - name: slack-notification
   type: docker-image
   source:
@@ -54,6 +60,13 @@ resources:
     paths:
     - ci/docker-image/*
 
+- name: r2dbc-client-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-client
+    base: master
+
 - name: r2dbc-client-release
   type: git
   source:
@@ -80,6 +93,13 @@ resources:
     username: ((artifactory-username))
     password: ((artifactory-password))
     build_name: R2DBC H2
+
+- name: r2dbc-h2-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-h2
+    base: master
 
 - name: r2dbc-h2-release
   type: git
@@ -123,6 +143,13 @@ resources:
     paths:
     - ci/docker-image/*
 
+- name: r2dbc-postgresql-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-postgresql
+    base: master
+
 - name: r2dbc-postgresql-release
   type: git
   source:
@@ -150,6 +177,13 @@ resources:
     password: ((artifactory-password))
     build_name: R2DBC SPI
 
+- name: r2dbc-spi-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-spi
+    base: master
+
 - name: r2dbc-spi-release
   type: git
   source:
@@ -174,6 +208,12 @@ groups:
   - r2dbc-h2
   - r2dbc-postgresql
   - r2dbc-spi
+- name: pull-requests
+  jobs:
+  - r2dbc-client-pull-requests
+  - r2dbc-h2-pull-requests
+  - r2dbc-postgresql-pull-requests
+  - r2dbc-spi-pull-requests
 - name: release
   jobs:
   - r2dbc-client-release
@@ -267,6 +307,41 @@ jobs:
     params:
       state:  success
       commit: r2dbc-client
+
+- name: r2dbc-client-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-client
+    resource: r2dbc-client-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-postgresql-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+    - r2dbc-spi
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - task: build
+    file: r2dbc-client/ci/build.yml
+  on_failure:
+    put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: failure
+  on_success:
+    put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: success
 
 - name: r2dbc-client-release
   serial: true
@@ -362,6 +437,33 @@ jobs:
       state:  success
       commit: r2dbc-h2
 
+- name: r2dbc-h2-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-h2
+    resource: r2dbc-h2-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - task: build
+    file: r2dbc-h2/ci/build.yml
+  on_failure:
+    put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: failure
+  on_success:
+    put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: success
+
 - name: r2dbc-h2-release
   serial: true
   public: true
@@ -456,6 +558,33 @@ jobs:
       state:  success
       commit: r2dbc-postgresql
 
+- name: r2dbc-postgresql-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    resource: r2dbc-postgresql-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - task: build
+    file: r2dbc-postgresql/ci/build.yml
+  on_failure:
+    put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: failure
+  on_success:
+    put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: success
+
 - name: r2dbc-postgresql-release
   serial: true
   public: true
@@ -542,6 +671,26 @@ jobs:
     params:
       state:  success
       commit: r2dbc-spi
+
+- name: r2dbc-spi-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-spi
+    resource: r2dbc-spi-pull-requests
+    trigger: true
+    version: every
+  - task: build
+    file: r2dbc-spi/ci/build.yml
+  on_failure:
+    put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: failure
+  on_success:
+    put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: success
 
 - name: r2dbc-spi-release
   serial: true
