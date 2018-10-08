@@ -43,7 +43,7 @@ resources:
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
     ignore_paths:
-    - ci/docker-image/*
+    - ci/Dockerfile
 
 - name: r2dbc-client-artifactory
   type: artifactory-resource
@@ -58,7 +58,7 @@ resources:
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
     paths:
-    - ci/docker-image/*
+    - ci/Dockerfile
 
 - name: r2dbc-client-pull-requests
   type: pull-request
@@ -126,7 +126,7 @@ resources:
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
     ignore_paths:
-    - ci/docker-image/*
+    - ci/Dockerfile
 
 - name: r2dbc-postgresql-artifactory
   type: artifactory-resource
@@ -141,7 +141,7 @@ resources:
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
     paths:
-    - ci/docker-image/*
+    - ci/Dockerfile
 
 - name: r2dbc-postgresql-pull-requests
   type: pull-request
@@ -236,7 +236,7 @@ jobs:
       trigger: true
   - put: r2dbc-client:latest
     params:
-      build: r2dbc-client-docker-image/ci/docker-image
+      build: r2dbc-client-docker-image/ci
 
 - name: r2dbc-postgresql:latest
   public: true
@@ -248,7 +248,7 @@ jobs:
       trigger: true
   - put: r2dbc-postgresql:latest
     params:
-      build: r2dbc-postgresql-docker-image/ci/docker-image
+      build: r2dbc-postgresql-docker-image/ci
 
 - name: r2dbc-client
   serial: true
@@ -256,6 +256,13 @@ jobs:
   plan:
   - get: r2dbc-client
     trigger: true
+  - get: r2dbc-h2-artifactory
+    trigger: true
+    passed:
+    - r2dbc-h2
+    params:
+      download_artifacts: true
+      save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     trigger: true
     passed:
@@ -277,6 +284,7 @@ jobs:
       state:  pending
   - task: build
     file: r2dbc-client/ci/build.yml
+    privileged: true
   - put: r2dbc-client-artifactory
     params:
       build_number:             ${BUILD_NAME}
@@ -336,6 +344,7 @@ jobs:
       status: pending
   - task: build
     file: r2dbc-client/ci/build.yml
+    privileged: true
   on_failure:
     put: r2dbc-client-pull-requests
     params:
@@ -360,6 +369,7 @@ jobs:
       state:  pending
   - task: build
     file: r2dbc-client/ci/release.yml
+    privileged: true
   - put: r2dbc-client-artifactory
     params:
       build_number:             ${BUILD_NAME}
@@ -535,6 +545,7 @@ jobs:
       state:  pending
   - task: build
     file: r2dbc-postgresql/ci/build.yml
+    privileged: true
   - put: r2dbc-postgresql-artifactory
     params:
       build_number:             ${BUILD_NAME}
@@ -586,6 +597,7 @@ jobs:
       status: pending
   - task: build
     file: r2dbc-postgresql/ci/build.yml
+    privileged: true
   on_failure:
     put: r2dbc-postgresql-pull-requests
     params:
@@ -610,6 +622,7 @@ jobs:
       state:  pending
   - task: build
     file: r2dbc-postgresql/ci/release.yml
+    privileged: true
   - put: r2dbc-postgresql-artifactory
     params:
       build_number:             ${BUILD_NAME}
