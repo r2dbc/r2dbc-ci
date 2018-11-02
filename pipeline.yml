@@ -319,7 +319,6 @@ jobs:
     trigger: true
     version: every
   - get: r2dbc-spi-artifactory
-    trigger: true
     passed:
     - r2dbc-spi
     params:
@@ -484,7 +483,6 @@ jobs:
     trigger: true
     version: every
   - get: r2dbc-postgresql-artifactory
-    trigger: true
     passed:
     - r2dbc-postgresql
     params:
@@ -619,7 +617,6 @@ jobs:
     trigger: true
     version: every
   - get: r2dbc-spi-artifactory
-    trigger: true
     passed:
     - r2dbc-spi
     params:
@@ -745,7 +742,6 @@ jobs:
     trigger: true
     version: every
   - get: r2dbc-spi-artifactory
-    trigger: true
     passed:
     - r2dbc-spi
     params:
