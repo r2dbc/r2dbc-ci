@@ -261,6 +261,30 @@ groups:
   - r2dbc-postgresql:latest
 
 jobs:
+- name: r2dbc-client:latest
+  public: true
+  plan:
+  - aggregate:
+    - get: r2dbc-client-docker-image
+      trigger: true
+    - get: openjdk:8-jdk
+      trigger: true
+  - put: r2dbc-client:latest
+    params:
+      build: r2dbc-client-docker-image/ci
+
+- name: r2dbc-postgresql:latest
+  public: true
+  plan:
+  - aggregate:
+    - get: r2dbc-postgresql-docker-image
+      trigger: true
+    - get: openjdk:8-jdk
+      trigger: true
+  - put: r2dbc-postgresql:latest
+    params:
+      build: r2dbc-postgresql-docker-image/ci
+
 - name: r2dbc-over-adba
   serial: true
   public: true
@@ -385,30 +409,6 @@ jobs:
       state:  success
       commit: r2dbc-over-adba
 
-- name: r2dbc-client:latest
-  public: true
-  plan:
-  - aggregate:
-    - get: r2dbc-client-docker-image
-      trigger: true
-    - get: openjdk:8-jdk
-      trigger: true
-  - put: r2dbc-client:latest
-    params:
-      build: r2dbc-client-docker-image/ci
-
-- name: r2dbc-postgresql:latest
-  public: true
-  plan:
-  - aggregate:
-    - get: r2dbc-postgresql-docker-image
-      trigger: true
-    - get: openjdk:8-jdk
-      trigger: true
-  - put: r2dbc-postgresql:latest
-    params:
-      build: r2dbc-postgresql-docker-image/ci
-
 - name: r2dbc-client
   serial: true
   public: true
@@ -482,6 +482,12 @@ jobs:
     resource: r2dbc-client-pull-requests
     trigger: true
     version: every
+  - get: r2dbc-h2-artifactory
+    passed:
+    - r2dbc-h2
+    params:
+      download_artifacts: true
+      save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     passed:
     - r2dbc-postgresql
@@ -489,7 +495,6 @@ jobs:
       download_artifacts: true
       save_build_info:    true
   - get: r2dbc-spi-artifactory
-    trigger: true
     passed:
     - r2dbc-postgresql
     - r2dbc-spi
