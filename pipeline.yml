@@ -489,6 +489,13 @@ jobs:
     params:
       download_artifacts: true
       save_build_info:    true
+  - get: r2dbc-mssql-artifactory
+    trigger: true
+    passed:
+    - r2dbc-mssql
+    params:
+      download_artifacts: true
+      save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     trigger: true
     passed:
@@ -552,6 +559,12 @@ jobs:
   - get: r2dbc-h2-artifactory
     passed:
     - r2dbc-h2
+    params:
+      download_artifacts: true
+      save_build_info:    true
+  - get: r2dbc-mssql-artifactory
+    passed:
+    - r2dbc-mssql
     params:
       download_artifacts: true
       save_build_info:    true
@@ -1008,7 +1021,7 @@ jobs:
     params:
       state:  success
       commit: r2dbc-mssql
- 
+
 - name: r2dbc-spi
   serial: true
   public: true
