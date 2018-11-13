@@ -4,7 +4,7 @@ resource_types:
   type: docker-image
   source:
     repository: springio/artifactory-resource
-    tag:        0.0.5
+    tag:        0.0.6
 
 - name: github-status
   type: docker-image
