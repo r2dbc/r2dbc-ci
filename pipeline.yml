@@ -4,7 +4,7 @@ resource_types:
   type: docker-image
   source:
     repository: springio/artifactory-resource
-    tag:        0.0.4
+    tag:        0.0.5
 
 - name: github-status
   type: docker-image
@@ -363,7 +363,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-over-adba-status
     params:
@@ -413,7 +412,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-over-adba-pull-requests
     params:
@@ -487,21 +485,18 @@ jobs:
     passed:
     - r2dbc-h2
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-mssql-artifactory
     trigger: true
     passed:
     - r2dbc-mssql
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     trigger: true
     passed:
     - r2dbc-postgresql
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-spi-artifactory
     trigger: true
@@ -509,7 +504,6 @@ jobs:
     - r2dbc-postgresql
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-client-status
     params:
@@ -560,26 +554,22 @@ jobs:
     passed:
     - r2dbc-h2
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-mssql-artifactory
     passed:
     - r2dbc-mssql
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     passed:
     - r2dbc-postgresql
     params:
-      download_artifacts: true
       save_build_info:    true
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-postgresql
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-client-pull-requests
     params:
@@ -655,7 +645,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-h2-status
     params:
@@ -705,7 +694,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-h2-pull-requests
     params:
@@ -779,7 +767,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-postgresql-status
     params:
@@ -830,7 +817,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-postgresql-pull-requests
     params:
@@ -906,7 +892,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-mssql-status
     params:
@@ -957,7 +942,6 @@ jobs:
     passed:
     - r2dbc-spi
     params:
-      download_artifacts: true
       save_build_info:    true
   - put: r2dbc-mssql-pull-requests
     params:
