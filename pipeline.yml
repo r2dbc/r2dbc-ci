@@ -362,6 +362,8 @@ jobs:
     trigger: true
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-over-adba-status
     params:
       commit: r2dbc-over-adba
@@ -409,6 +411,8 @@ jobs:
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-over-adba-pull-requests
     params:
       path: r2dbc-over-adba
@@ -480,19 +484,27 @@ jobs:
     trigger: true
     passed:
     - r2dbc-h2
+    params:
+      save_build_info:    true
   - get: r2dbc-mssql-artifactory
     trigger: true
     passed:
     - r2dbc-mssql
+    params:
+      save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     trigger: true
     passed:
     - r2dbc-postgresql
+    params:
+      save_build_info:    true
   - get: r2dbc-spi-artifactory
     trigger: true
     passed:
     - r2dbc-postgresql
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-client-status
     params:
       commit: r2dbc-client
@@ -541,16 +553,24 @@ jobs:
   - get: r2dbc-h2-artifactory
     passed:
     - r2dbc-h2
+    params:
+      save_build_info:    true
   - get: r2dbc-mssql-artifactory
     passed:
     - r2dbc-mssql
+    params:
+      save_build_info:    true
   - get: r2dbc-postgresql-artifactory
     passed:
     - r2dbc-postgresql
+    params:
+      save_build_info:    true
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-postgresql
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-client-pull-requests
     params:
       path: r2dbc-client
@@ -624,6 +644,8 @@ jobs:
     trigger: true
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-h2-status
     params:
       commit: r2dbc-h2
@@ -671,6 +693,8 @@ jobs:
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-h2-pull-requests
     params:
       path: r2dbc-h2
@@ -742,6 +766,8 @@ jobs:
     trigger: true
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-postgresql-status
     params:
       commit: r2dbc-postgresql
@@ -790,6 +816,8 @@ jobs:
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-postgresql-pull-requests
     params:
       path: r2dbc-postgresql
@@ -863,6 +891,8 @@ jobs:
     trigger: true
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-mssql-status
     params:
       commit: r2dbc-mssql
@@ -911,6 +941,8 @@ jobs:
   - get: r2dbc-spi-artifactory
     passed:
     - r2dbc-spi
+    params:
+      save_build_info:    true
   - put: r2dbc-mssql-pull-requests
     params:
       path: r2dbc-mssql
