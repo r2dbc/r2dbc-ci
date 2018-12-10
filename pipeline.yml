@@ -196,6 +196,57 @@ resources:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-postgresql
 
+- name: r2dbc-proxy:latest
+  type: docker-image
+  source:
+    repository: r2dbc/r2dbc-proxy
+    email:      ((docker-email))
+    username:   ((docker-username))
+    password:   ((docker-password))
+
+- name: r2dbc-proxy
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-proxy.git
+    ignore_paths:
+    - ci/Dockerfile
+
+- name: r2dbc-proxy-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC proxy
+
+- name: r2dbc-proxy-docker-image
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-proxy.git
+    paths:
+    - ci/Dockerfile
+
+- name: r2dbc-proxy-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-proxy
+    base: master
+
+- name: r2dbc-proxy-release
+  type: git
+  source:
+    uri:    https://github.com/r2dbc/r2dbc-proxy.git
+    branch: release
+    ignore_paths:
+    - ci/docker-image/*
+
+- name: r2dbc-proxy-status
+  type: github-status
+  source:
+    access_token: ((github-access-token))
+    repository:   r2dbc/r2dbc-proxy
+
 - name: r2dbc-mssql:latest
   type: docker-image
   source:
@@ -291,6 +342,7 @@ groups:
   - r2dbc-client
   - r2dbc-h2
   - r2dbc-postgresql
+  - r2dbc-proxy
   - r2dbc-mssql
   - r2dbc-spi
 - name: pull-requests
@@ -299,6 +351,7 @@ groups:
   - r2dbc-client-pull-requests
   - r2dbc-h2-pull-requests
   - r2dbc-postgresql-pull-requests
+  - r2dbc-proxy-pull-requests
   - r2dbc-mssql-pull-requests
   - r2dbc-spi-pull-requests
 - name: release
@@ -307,12 +360,14 @@ groups:
   - r2dbc-client-release
   - r2dbc-h2-release
   - r2dbc-postgresql-release
+  - r2dbc-proxy-release
   - r2dbc-mssql-release
   - r2dbc-spi-release
 - name: docker
   jobs:
   - r2dbc-client:latest
   - r2dbc-postgresql:latest
+  - r2dbc-proxy:latest
   - r2dbc-mssql:latest
 
 jobs:
@@ -339,6 +394,18 @@ jobs:
   - put: r2dbc-postgresql:latest
     params:
       build: r2dbc-postgresql-docker-image/ci
+
+- name: r2dbc-proxy:latest
+  public: true
+  plan:
+  - aggregate:
+    - get: r2dbc-proxy-docker-image
+      trigger: true
+    - get: openjdk:8-jdk
+      trigger: true
+  - put: r2dbc-proxy:latest
+    params:
+      build: r2dbc-proxy-docker-image/ci
 
 - name: r2dbc-mssql:latest
   public: true
@@ -849,6 +916,127 @@ jobs:
           title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   on_success:
     put: r2dbc-postgresql-status
+    params:
+      state:  success
+      commit: r2dbc-postgresql
+
+- name: r2dbc-proxy
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  pending
+  - task: build
+    file: r2dbc-proxy/ci/build.yml
+    privileged: true
+  - put: r2dbc-proxy-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-snapshot-local
+      folder:                   r2dbc-proxy-artifactory
+  on_abort:
+    put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  error
+  on_failure:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+  on_success:
+    put: r2dbc-proxy-status
+    params:
+      state:  success
+      commit: r2dbc-proxy
+
+- name: r2dbc-proxy-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    resource: r2dbc-proxy-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: pending
+  - task: build
+    file: r2dbc-proxy/ci/build.yml
+    privileged: true
+  on_failure:
+    put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: failure
+  on_success:
+    put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: success
+
+- name: r2dbc-proxy-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    resource: r2dbc-proxy-release
+    trigger: true
+  - put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  pending
+  - task: build
+    file: r2dbc-proxy/ci/release.yml
+    privileged: true
+  - put: r2dbc-proxy-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
+      folder:                   r2dbc-proxy-artifactory
+  on_abort:
+    put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  error
+  on_failure:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+  on_success:
+    put: r2dbc-proxy-status
     params:
       state:  success
       commit: r2dbc-postgresql
