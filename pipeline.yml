@@ -1095,7 +1095,7 @@ jobs:
     put: r2dbc-proxy-status
     params:
       state:  success
-      commit: r2dbc-postgresql
+      commit: r2dbc-proxy
 
 - name: r2dbc-mssql
   serial: true
