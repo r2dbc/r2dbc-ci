@@ -160,6 +160,39 @@ resources:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-h2
 
+- name: r2dbc-pool
+  type: git
+  source:
+    uri: https://github.com/r2dbc/r2dbc-pool.git
+
+- name: r2dbc-pool-artifactory
+  type: artifactory-resource
+  source:
+    uri: https://repo.spring.io
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    build_name: R2DBC Pool
+
+- name: r2dbc-pool-pull-requests
+  type: pull-request
+  source:
+    access_token: ((github-access-token))
+    repo: r2dbc/r2dbc-pool
+    base: master
+
+- name: r2dbc-pool-release
+  type: git
+  source:
+    uri:    https://github.com/r2dbc/r2dbc-pool.git
+    branch: release
+
+- name: r2dbc-pool-status
+  type: github-status
+  source:
+    access_token: ((github-access-token))
+    repository:   r2dbc/r2dbc-pool
+
+
 - name: r2dbc-postgresql:latest
   type: docker-image
   source:
@@ -392,12 +425,14 @@ groups:
   - r2dbc-proxy
   - r2dbc-mssql
   - r2dbc-over-adba
+  - r2dbc-pool
   - r2dbc-spi
 - name: pull-requests
   jobs:
   - r2dbc-bom-pull-requests
   - r2dbc-client-pull-requests
   - r2dbc-h2-pull-requests
+  - r2dbc-pool-pull-requests
   - r2dbc-postgresql-pull-requests
   - r2dbc-proxy-pull-requests
   - r2dbc-mssql-pull-requests
@@ -408,6 +443,7 @@ groups:
   - r2dbc-bom-release
   - r2dbc-client-release
   - r2dbc-h2-release
+  - r2dbc-pool-release
   - r2dbc-postgresql-release
   - r2dbc-proxy-release
   - r2dbc-mssql-release
@@ -854,6 +890,121 @@ jobs:
     params:
       state:  success
       commit: r2dbc-h2
+
+- name: r2dbc-pool
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-pool
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  pending
+  - task: build
+    file: r2dbc-pool/ci/build.yml
+  - put: r2dbc-pool-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-snapshot-local
+      folder:                   r2dbc-pool-artifactory
+  on_abort:
+    put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  error
+  on_failure:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+  on_success:
+    put: r2dbc-pool-status
+    params:
+      state:  success
+      commit: r2dbc-pool
+
+- name: r2dbc-pool-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-pool
+    resource: r2dbc-pool-pull-requests
+    trigger: true
+    version: every
+  - put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: pending
+  - task: build
+    file: r2dbc-pool/ci/build.yml
+  on_failure:
+    put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: failure
+  on_success:
+    put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: success
+
+- name: r2dbc-pool-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-pool
+    resource: r2dbc-pool-release
+    trigger: true
+  - put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  pending
+  - task: build
+    file: r2dbc-pool/ci/release.yml
+  - put: r2dbc-pool-artifactory
+    params:
+      build_number:             ${BUILD_NAME}
+      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:                     libs-milestone-local
+      folder:                   r2dbc-pool-artifactory
+  on_abort:
+    put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  error
+  on_failure:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  failure
+    - put: slack
+      params:
+        attachments:
+        - color: danger
+          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
+          text: "Build has failed"
+          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
+          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+  on_success:
+    put: r2dbc-pool-status
+    params:
+      state:  success
+      commit: r2dbc-pool
 
 - name: r2dbc-postgresql
   serial: true
