@@ -4,7 +4,7 @@ resource_types:
   type: docker-image
   source:
     repository: springio/artifactory-resource
-    tag:        0.0.6
+    tag:        0.0.10
 
 - name: github-status
   type: docker-image
@@ -18,10 +18,10 @@ resource_types:
     repository: jtarchie/pr
     tag:        latest
 
-- name: slack-notification
-  type: docker-image
+- name: slack-alert
+  type: registry-image
   source:
-    repository: nebhale/slack-notification-resource
+    repository: arbourd/concourse-slack-alert-resource
 
 resources:
 - name: openjdk:8-jdk
@@ -191,7 +191,6 @@ resources:
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-pool
-
 
 - name: r2dbc-postgresql:latest
   type: docker-image
@@ -411,7 +410,7 @@ resources:
     repository:   r2dbc/r2dbc-spi
 
 - name: slack
-  type: slack-notification
+  type: slack-alert
   source:
     url: ((slack))
 
@@ -421,33 +420,33 @@ groups:
   - r2dbc-bom
   - r2dbc-client
   - r2dbc-h2
-  - r2dbc-postgresql
-  - r2dbc-proxy
   - r2dbc-mssql
   - r2dbc-over-adba
   - r2dbc-pool
+  - r2dbc-postgresql
+  - r2dbc-proxy
   - r2dbc-spi
 - name: pull-requests
   jobs:
   - r2dbc-bom-pull-requests
   - r2dbc-client-pull-requests
   - r2dbc-h2-pull-requests
+  - r2dbc-mssql-pull-requests
+  - r2dbc-over-adba-pull-requests
   - r2dbc-pool-pull-requests
   - r2dbc-postgresql-pull-requests
   - r2dbc-proxy-pull-requests
-  - r2dbc-mssql-pull-requests
-  - r2dbc-over-adba-pull-requests
   - r2dbc-spi-pull-requests
 - name: release
   jobs:
   - r2dbc-bom-release
   - r2dbc-client-release
   - r2dbc-h2-release
+  - r2dbc-mssql-release
+  - r2dbc-over-adba-release
   - r2dbc-pool-release
   - r2dbc-postgresql-release
   - r2dbc-proxy-release
-  - r2dbc-mssql-release
-  - r2dbc-over-adba-release
   - r2dbc-spi-release
 - name: docker
   jobs:
@@ -458,6 +457,1141 @@ groups:
   - r2dbc-mssql:latest
 
 jobs:
+- name: r2dbc-bom
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-bom
+    trigger: true
+  - put: r2dbc-bom-status
+    params:
+      commit: r2dbc-bom
+      state:  pending
+  - task: build
+    file: r2dbc-bom/ci/build.yml
+  - put: r2dbc-bom-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-bom-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        commit: r2dbc-bom
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        commit: r2dbc-bom
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        state:  success
+        commit: r2dbc-bom
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-bom-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-bom
+    resource: r2dbc-bom-pull-requests
+    trigger: true
+    version: every
+  - put: r2dbc-bom-pull-requests
+    params:
+      path: r2dbc-bom
+      status: pending
+  - task: build
+    file: r2dbc-bom/ci/build.yml
+  on_failure:
+    put: r2dbc-bom-pull-requests
+    params:
+      path: r2dbc-bom
+      status: failure
+  on_success:
+    put: r2dbc-bom-pull-requests
+    params:
+      path: r2dbc-bom
+      status: success
+
+- name: r2dbc-bom-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-bom
+    resource: r2dbc-bom-release
+    trigger: true
+  - put: r2dbc-bom-status
+    params:
+      commit: r2dbc-bom
+      state:  pending
+  - task: build
+    file: r2dbc-bom/ci/release.yml
+  - put: r2dbc-bom-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-bom-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        commit: r2dbc-bom
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        commit: r2dbc-bom
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-bom-status
+      params:
+        state:  success
+        commit: r2dbc-bom
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-client
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-client
+    trigger: true
+  - get: r2dbc-h2-artifactory
+    trigger: true
+    passed:
+    - r2dbc-h2
+  - get: r2dbc-mssql-artifactory
+    trigger: true
+    passed:
+    - r2dbc-mssql
+  - get: r2dbc-postgresql-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-postgresql
+    - r2dbc-spi
+  - put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  pending
+  - task: build
+    file: r2dbc-client/ci/build.yml
+    privileged: true
+  - put: r2dbc-client-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-client-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        state:  success
+        commit: r2dbc-client
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-client-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-client
+    resource: r2dbc-client-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-h2-artifactory
+    passed:
+    - r2dbc-h2
+  - get: r2dbc-mssql-artifactory
+    passed:
+    - r2dbc-mssql
+  - get: r2dbc-postgresql-artifactory
+    passed:
+    - r2dbc-postgresql
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-postgresql
+    - r2dbc-spi
+  - put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: pending
+  - task: build
+    file: r2dbc-client/ci/build.yml
+    privileged: true
+  on_failure:
+    put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: failure
+  on_success:
+    put: r2dbc-client-pull-requests
+    params:
+      path: r2dbc-client
+      status: success
+
+- name: r2dbc-client-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-client
+    resource: r2dbc-client-release
+    trigger: true
+  - put: r2dbc-client-status
+    params:
+      commit: r2dbc-client
+      state:  pending
+  - task: build
+    file: r2dbc-client/ci/release.yml
+    privileged: true
+  - put: r2dbc-client-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-client-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        commit: r2dbc-client
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-client-status
+      params:
+        state:  success
+        commit: r2dbc-client
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-h2
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-h2
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  pending
+  - task: build
+    file: r2dbc-h2/ci/build.yml
+  - put: r2dbc-h2-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-h2-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        state:  success
+        commit: r2dbc-h2
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-h2-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-h2
+    resource: r2dbc-h2-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: pending
+  - task: build
+    file: r2dbc-h2/ci/build.yml
+  on_failure:
+    put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: failure
+  on_success:
+    put: r2dbc-h2-pull-requests
+    params:
+      path: r2dbc-h2
+      status: success
+
+- name: r2dbc-h2-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-h2
+    resource: r2dbc-h2-release
+    trigger: true
+  - put: r2dbc-h2-status
+    params:
+      commit: r2dbc-h2
+      state:  pending
+  - task: build
+    file: r2dbc-h2/ci/release.yml
+  - put: r2dbc-h2-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-h2-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        commit: r2dbc-h2
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-h2-status
+      params:
+        state:  success
+        commit: r2dbc-h2
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-mssql
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-mssql
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-mssql-status
+    params:
+      commit: r2dbc-mssql
+      state:  pending
+  - task: build
+    file: r2dbc-mssql/ci/build.yml
+    privileged: true
+  - put: r2dbc-mssql-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-mssql-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        commit: r2dbc-mssql
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        commit: r2dbc-mssql
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        state:  success
+        commit: r2dbc-mssql
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-mssql-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-mssql
+    resource: r2dbc-mssql-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-mssql-pull-requests
+    params:
+      path: r2dbc-mssql
+      status: pending
+  - task: build
+    file: r2dbc-mssql/ci/build.yml
+    privileged: true
+  on_failure:
+    put: r2dbc-mssql-pull-requests
+    params:
+      path: r2dbc-mssql
+      status: failure
+  on_success:
+    put: r2dbc-mssql-pull-requests
+    params:
+      path: r2dbc-mssql
+      status: success
+
+- name: r2dbc-mssql-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-mssql
+    resource: r2dbc-mssql-release
+    trigger: true
+  - put: r2dbc-mssql-status
+    params:
+      commit: r2dbc-mssql
+      state:  pending
+  - task: build
+    file: r2dbc-mssql/ci/release.yml
+    privileged: true
+  - put: r2dbc-mssql-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-mssql-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        commit: r2dbc-mssql
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        commit: r2dbc-mssql
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-mssql-status
+      params:
+        state:  success
+        commit: r2dbc-mssql
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-over-adba
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-over-adba
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-over-adba-status
+    params:
+      commit: r2dbc-over-adba
+      state:  pending
+  - task: build
+    file: r2dbc-over-adba/ci/build.yml
+  - put: r2dbc-over-adba-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-over-adba-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        commit: r2dbc-over-adba
+        state:  error
+    # - put: slack
+    #   params:
+    #     alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        commit: r2dbc-over-adba
+        state:  failure
+    # - put: slack
+    #   params:
+    #     alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        state:  success
+        commit: r2dbc-over-adba
+    # - put: slack
+    #   params:
+    #     alert_type: success
+
+- name: r2dbc-over-adba-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-over-adba
+    resource: r2dbc-over-adba-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-over-adba-pull-requests
+    params:
+      path: r2dbc-over-adba
+      status: pending
+  - task: build
+    file: r2dbc-over-adba/ci/build.yml
+  on_failure:
+    put: r2dbc-over-adba-pull-requests
+    params:
+      path: r2dbc-over-adba
+      status: failure
+  on_success:
+    put: r2dbc-over-adba-pull-requests
+    params:
+      path: r2dbc-over-adba
+      status: success
+
+- name: r2dbc-over-adba-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-over-adba
+    resource: r2dbc-over-adba-release
+    trigger: true
+  - put: r2dbc-over-adba-status
+    params:
+      commit: r2dbc-over-adba
+      state:  pending
+  - task: build
+    file: r2dbc-over-adba/ci/release.yml
+  - put: r2dbc-over-adba-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-over-adba-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        commit: r2dbc-over-adba
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        commit: r2dbc-over-adba
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-over-adba-status
+      params:
+        state:  success
+        commit: r2dbc-over-adba
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-pool
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-pool
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  pending
+  - task: build
+    file: r2dbc-pool/ci/build.yml
+  - put: r2dbc-pool-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-pool-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        state:  success
+        commit: r2dbc-pool
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-pool-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-pool
+    resource: r2dbc-pool-pull-requests
+    trigger: true
+    version: every
+  - put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: pending
+  - task: build
+    file: r2dbc-pool/ci/build.yml
+  on_failure:
+    put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: failure
+  on_success:
+    put: r2dbc-pool-pull-requests
+    params:
+      path: r2dbc-pool
+      status: success
+
+- name: r2dbc-pool-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-pool
+    resource: r2dbc-pool-release
+    trigger: true
+  - put: r2dbc-pool-status
+    params:
+      commit: r2dbc-pool
+      state:  pending
+  - task: build
+    file: r2dbc-pool/ci/release.yml
+  - put: r2dbc-pool-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-pool-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        commit: r2dbc-pool
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-pool-status
+      params:
+        state:  success
+        commit: r2dbc-pool
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-postgresql
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  pending
+  - task: build
+    file: r2dbc-postgresql/ci/build.yml
+    privileged: true
+  - put: r2dbc-postgresql-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-postgresql-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        state:  success
+        commit: r2dbc-postgresql
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-postgresql-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    resource: r2dbc-postgresql-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: pending
+  - task: build
+    file: r2dbc-postgresql/ci/build.yml
+    privileged: true
+  on_failure:
+    put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: failure
+  on_success:
+    put: r2dbc-postgresql-pull-requests
+    params:
+      path: r2dbc-postgresql
+      status: success
+
+- name: r2dbc-postgresql-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-postgresql
+    resource: r2dbc-postgresql-release
+    trigger: true
+  - put: r2dbc-postgresql-status
+    params:
+      commit: r2dbc-postgresql
+      state:  pending
+  - task: build
+    file: r2dbc-postgresql/ci/release.yml
+    privileged: true
+  - put: r2dbc-postgresql-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-postgresql-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        commit: r2dbc-postgresql
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-postgresql-status
+      params:
+        state:  success
+        commit: r2dbc-postgresql
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-proxy
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    trigger: true
+  - get: r2dbc-spi-artifactory
+    trigger: true
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  pending
+  - task: build
+    file: r2dbc-proxy/ci/build.yml
+    privileged: true
+  - put: r2dbc-proxy-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-proxy-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        state:  success
+        commit: r2dbc-proxy
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-proxy-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    resource: r2dbc-proxy-pull-requests
+    trigger: true
+    version: every
+  - get: r2dbc-spi-artifactory
+    passed:
+    - r2dbc-spi
+  - put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: pending
+  - task: build
+    file: r2dbc-proxy/ci/build.yml
+    privileged: true
+  on_failure:
+    put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: failure
+  on_success:
+    put: r2dbc-proxy-pull-requests
+    params:
+      path: r2dbc-proxy
+      status: success
+
+- name: r2dbc-proxy-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-proxy
+    resource: r2dbc-proxy-release
+    trigger: true
+  - put: r2dbc-proxy-status
+    params:
+      commit: r2dbc-proxy
+      state:  pending
+  - task: build
+    file: r2dbc-proxy/ci/release.yml
+    privileged: true
+  - put: r2dbc-proxy-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-proxy-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        commit: r2dbc-proxy
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-proxy-status
+      params:
+        state:  success
+        commit: r2dbc-proxy
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-spi
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-spi
+    trigger: true
+  - put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  pending
+  - task: build
+    file: r2dbc-spi/ci/build.yml
+  - put: r2dbc-spi-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-snapshot-local
+      folder:       r2dbc-spi-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        state:  success
+        commit: r2dbc-spi
+    - put: slack
+      params:
+        alert_type: success
+
+- name: r2dbc-spi-pull-requests
+  public: true
+  plan:
+  - get: r2dbc-spi
+    resource: r2dbc-spi-pull-requests
+    trigger: true
+    version: every
+  - put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: pending
+  - task: build
+    file: r2dbc-spi/ci/build.yml
+  on_failure:
+    put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: failure
+  on_success:
+    put: r2dbc-spi-pull-requests
+    params:
+      path: r2dbc-spi
+      status: success
+
+- name: r2dbc-spi-release
+  serial: true
+  public: true
+  plan:
+  - get: r2dbc-spi
+    resource: r2dbc-spi-release
+    trigger: true
+  - put: r2dbc-spi-status
+    params:
+      commit: r2dbc-spi
+      state:  pending
+  - task: build
+    file: r2dbc-spi/ci/release.yml
+  - put: r2dbc-spi-artifactory
+    params:
+      build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
+      build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
+      repo:         libs-milestone-local
+      folder:       r2dbc-spi-artifactory
+  on_abort:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  error
+    - put: slack
+      params:
+        alert_type: aborted
+  on_failure:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        commit: r2dbc-spi
+        state:  failure
+    - put: slack
+      params:
+        alert_type: failed
+  on_success:
+    aggregate:
+    - put: r2dbc-spi-status
+      params:
+        state:  success
+        commit: r2dbc-spi
+    - put: slack
+      params:
+        alert_type: success
+
+# Docker
 - name: r2dbc-bom:latest
   public: true
   plan:
@@ -517,1084 +1651,3 @@ jobs:
   - put: r2dbc-mssql:latest
     params:
       build: r2dbc-mssql-docker-image/ci
-
-- name: r2dbc-bom
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-bom
-    trigger: true
-  - put: r2dbc-bom-status
-    params:
-      commit: r2dbc-bom
-      state:  pending
-  - task: build
-    file: r2dbc-bom/ci/build.yml
-  - put: r2dbc-bom-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-bom-artifactory
-  on_abort:
-    put: r2dbc-bom-status
-    params:
-      commit: r2dbc-bom
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-bom-status
-      params:
-        commit: r2dbc-bom
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-bom-status
-    params:
-      state:  success
-      commit: r2dbc-bom
-
-- name: r2dbc-bom-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-bom
-    resource: r2dbc-bom-pull-requests
-    trigger: true
-    version: every
-  - put: r2dbc-bom-pull-requests
-    params:
-      path: r2dbc-bom
-      status: pending
-  - task: build
-    file: r2dbc-bom/ci/build.yml
-  on_failure:
-    put: r2dbc-bom-pull-requests
-    params:
-      path: r2dbc-bom
-      status: failure
-  on_success:
-    put: r2dbc-bom-pull-requests
-    params:
-      path: r2dbc-bom
-      status: success
-
-- name: r2dbc-bom-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-bom
-    resource: r2dbc-bom-release
-    trigger: true
-  - put: r2dbc-bom-status
-    params:
-      commit: r2dbc-bom
-      state:  pending
-  - task: build
-    file: r2dbc-bom/ci/release.yml
-  - put: r2dbc-bom-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-bom-artifactory
-  on_abort:
-    put: r2dbc-bom-status
-    params:
-      commit: r2dbc-bom
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-bom-status
-      params:
-        commit: r2dbc-bom
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-bom-status
-    params:
-      state:  success
-      commit: r2dbc-bom
-
-- name: r2dbc-client
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-client
-    trigger: true
-  - get: r2dbc-h2-artifactory
-    trigger: true
-    passed:
-    - r2dbc-h2
-  - get: r2dbc-mssql-artifactory
-    trigger: true
-    passed:
-    - r2dbc-mssql
-  - get: r2dbc-postgresql-artifactory
-    trigger: true
-    passed:
-    - r2dbc-postgresql
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-postgresql
-    - r2dbc-spi
-  - put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  pending
-  - task: build
-    file: r2dbc-client/ci/build.yml
-    privileged: true
-  - put: r2dbc-client-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-client-artifactory
-  on_abort:
-    put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-client-status
-      params:
-        commit: r2dbc-client
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-client-status
-    params:
-      state:  success
-      commit: r2dbc-client
-
-- name: r2dbc-client-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-client
-    resource: r2dbc-client-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-h2-artifactory
-    passed:
-    - r2dbc-h2
-  - get: r2dbc-mssql-artifactory
-    passed:
-    - r2dbc-mssql
-  - get: r2dbc-postgresql-artifactory
-    passed:
-    - r2dbc-postgresql
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-postgresql
-    - r2dbc-spi
-  - put: r2dbc-client-pull-requests
-    params:
-      path: r2dbc-client
-      status: pending
-  - task: build
-    file: r2dbc-client/ci/build.yml
-    privileged: true
-  on_failure:
-    put: r2dbc-client-pull-requests
-    params:
-      path: r2dbc-client
-      status: failure
-  on_success:
-    put: r2dbc-client-pull-requests
-    params:
-      path: r2dbc-client
-      status: success
-
-- name: r2dbc-client-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-client
-    resource: r2dbc-client-release
-    trigger: true
-  - put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  pending
-  - task: build
-    file: r2dbc-client/ci/release.yml
-    privileged: true
-  - put: r2dbc-client-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-client-artifactory
-  on_abort:
-    put: r2dbc-client-status
-    params:
-      commit: r2dbc-client
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-client-status
-      params:
-        commit: r2dbc-client
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-client-status
-    params:
-      state:  success
-      commit: r2dbc-client
-
-- name: r2dbc-h2
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-h2
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  pending
-  - task: build
-    file: r2dbc-h2/ci/build.yml
-  - put: r2dbc-h2-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-h2-artifactory
-  on_abort:
-    put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-h2-status
-      params:
-        commit: r2dbc-h2
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-h2-status
-    params:
-      state:  success
-      commit: r2dbc-h2
-
-- name: r2dbc-h2-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-h2
-    resource: r2dbc-h2-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-h2-pull-requests
-    params:
-      path: r2dbc-h2
-      status: pending
-  - task: build
-    file: r2dbc-h2/ci/build.yml
-  on_failure:
-    put: r2dbc-h2-pull-requests
-    params:
-      path: r2dbc-h2
-      status: failure
-  on_success:
-    put: r2dbc-h2-pull-requests
-    params:
-      path: r2dbc-h2
-      status: success
-
-- name: r2dbc-h2-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-h2
-    resource: r2dbc-h2-release
-    trigger: true
-  - put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  pending
-  - task: build
-    file: r2dbc-h2/ci/release.yml
-  - put: r2dbc-h2-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-h2-artifactory
-  on_abort:
-    put: r2dbc-h2-status
-    params:
-      commit: r2dbc-h2
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-h2-status
-      params:
-        commit: r2dbc-h2
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-h2-status
-    params:
-      state:  success
-      commit: r2dbc-h2
-
-- name: r2dbc-pool
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-pool
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-pool-status
-    params:
-      commit: r2dbc-pool
-      state:  pending
-  - task: build
-    file: r2dbc-pool/ci/build.yml
-  - put: r2dbc-pool-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-pool-artifactory
-  on_abort:
-    put: r2dbc-pool-status
-    params:
-      commit: r2dbc-pool
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-pool-status
-      params:
-        commit: r2dbc-pool
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-pool-status
-    params:
-      state:  success
-      commit: r2dbc-pool
-
-- name: r2dbc-pool-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-pool
-    resource: r2dbc-pool-pull-requests
-    trigger: true
-    version: every
-  - put: r2dbc-pool-pull-requests
-    params:
-      path: r2dbc-pool
-      status: pending
-  - task: build
-    file: r2dbc-pool/ci/build.yml
-  on_failure:
-    put: r2dbc-pool-pull-requests
-    params:
-      path: r2dbc-pool
-      status: failure
-  on_success:
-    put: r2dbc-pool-pull-requests
-    params:
-      path: r2dbc-pool
-      status: success
-
-- name: r2dbc-pool-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-pool
-    resource: r2dbc-pool-release
-    trigger: true
-  - put: r2dbc-pool-status
-    params:
-      commit: r2dbc-pool
-      state:  pending
-  - task: build
-    file: r2dbc-pool/ci/release.yml
-  - put: r2dbc-pool-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-pool-artifactory
-  on_abort:
-    put: r2dbc-pool-status
-    params:
-      commit: r2dbc-pool
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-pool-status
-      params:
-        commit: r2dbc-pool
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-pool-status
-    params:
-      state:  success
-      commit: r2dbc-pool
-
-- name: r2dbc-postgresql
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-postgresql
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  pending
-  - task: build
-    file: r2dbc-postgresql/ci/build.yml
-    privileged: true
-  - put: r2dbc-postgresql-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-postgresql-artifactory
-  on_abort:
-    put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-postgresql-status
-      params:
-        commit: r2dbc-postgresql
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-postgresql-status
-    params:
-      state:  success
-      commit: r2dbc-postgresql
-
-- name: r2dbc-postgresql-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-postgresql
-    resource: r2dbc-postgresql-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-postgresql-pull-requests
-    params:
-      path: r2dbc-postgresql
-      status: pending
-  - task: build
-    file: r2dbc-postgresql/ci/build.yml
-    privileged: true
-  on_failure:
-    put: r2dbc-postgresql-pull-requests
-    params:
-      path: r2dbc-postgresql
-      status: failure
-  on_success:
-    put: r2dbc-postgresql-pull-requests
-    params:
-      path: r2dbc-postgresql
-      status: success
-
-- name: r2dbc-postgresql-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-postgresql
-    resource: r2dbc-postgresql-release
-    trigger: true
-  - put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  pending
-  - task: build
-    file: r2dbc-postgresql/ci/release.yml
-    privileged: true
-  - put: r2dbc-postgresql-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-postgresql-artifactory
-  on_abort:
-    put: r2dbc-postgresql-status
-    params:
-      commit: r2dbc-postgresql
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-postgresql-status
-      params:
-        commit: r2dbc-postgresql
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-postgresql-status
-    params:
-      state:  success
-      commit: r2dbc-postgresql
-
-- name: r2dbc-proxy
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-proxy
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-proxy-status
-    params:
-      commit: r2dbc-proxy
-      state:  pending
-  - task: build
-    file: r2dbc-proxy/ci/build.yml
-    privileged: true
-  - put: r2dbc-proxy-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-proxy-artifactory
-  on_abort:
-    put: r2dbc-proxy-status
-    params:
-      commit: r2dbc-proxy
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-proxy-status
-      params:
-        commit: r2dbc-proxy
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-proxy-status
-    params:
-      state:  success
-      commit: r2dbc-proxy
-
-- name: r2dbc-proxy-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-proxy
-    resource: r2dbc-proxy-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-proxy-pull-requests
-    params:
-      path: r2dbc-proxy
-      status: pending
-  - task: build
-    file: r2dbc-proxy/ci/build.yml
-    privileged: true
-  on_failure:
-    put: r2dbc-proxy-pull-requests
-    params:
-      path: r2dbc-proxy
-      status: failure
-  on_success:
-    put: r2dbc-proxy-pull-requests
-    params:
-      path: r2dbc-proxy
-      status: success
-
-- name: r2dbc-proxy-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-proxy
-    resource: r2dbc-proxy-release
-    trigger: true
-  - put: r2dbc-proxy-status
-    params:
-      commit: r2dbc-proxy
-      state:  pending
-  - task: build
-    file: r2dbc-proxy/ci/release.yml
-    privileged: true
-  - put: r2dbc-proxy-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-proxy-artifactory
-  on_abort:
-    put: r2dbc-proxy-status
-    params:
-      commit: r2dbc-proxy
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-proxy-status
-      params:
-        commit: r2dbc-proxy
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-proxy-status
-    params:
-      state:  success
-      commit: r2dbc-proxy
-
-- name: r2dbc-mssql
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-mssql
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-mssql-status
-    params:
-      commit: r2dbc-mssql
-      state:  pending
-  - task: build
-    file: r2dbc-mssql/ci/build.yml
-    privileged: true
-  - put: r2dbc-mssql-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-mssql-artifactory
-  on_abort:
-    put: r2dbc-mssql-status
-    params:
-      commit: r2dbc-mssql
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-mssql-status
-      params:
-        commit: r2dbc-mssql
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-mssql-status
-    params:
-      state:  success
-      commit: r2dbc-mssql
-
-- name: r2dbc-mssql-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-mssql
-    resource: r2dbc-mssql-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-mssql-pull-requests
-    params:
-      path: r2dbc-mssql
-      status: pending
-  - task: build
-    file: r2dbc-mssql/ci/build.yml
-    privileged: true
-  on_failure:
-    put: r2dbc-mssql-pull-requests
-    params:
-      path: r2dbc-mssql
-      status: failure
-  on_success:
-    put: r2dbc-mssql-pull-requests
-    params:
-      path: r2dbc-mssql
-      status: success
-
-- name: r2dbc-mssql-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-mssql
-    resource: r2dbc-mssql-release
-    trigger: true
-  - put: r2dbc-mssql-status
-    params:
-      commit: r2dbc-mssql
-      state:  pending
-  - task: build
-    file: r2dbc-mssql/ci/release.yml
-    privileged: true
-  - put: r2dbc-mssql-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-mssql-artifactory
-  on_abort:
-    put: r2dbc-mssql-status
-    params:
-      commit: r2dbc-mssql
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-mssql-status
-      params:
-        commit: r2dbc-mssql
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-mssql-status
-    params:
-      state:  success
-      commit: r2dbc-mssql
-
-- name: r2dbc-over-adba
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-over-adba
-    trigger: true
-  - get: r2dbc-spi-artifactory
-    trigger: true
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-over-adba-status
-    params:
-      commit: r2dbc-over-adba
-      state:  pending
-  - task: build
-    file: r2dbc-over-adba/ci/build.yml
-  - put: r2dbc-over-adba-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-over-adba-artifactory
-  on_abort:
-    put: r2dbc-over-adba-status
-    params:
-      commit: r2dbc-over-adba
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-over-adba-status
-      params:
-        commit: r2dbc-over-adba
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-over-adba-status
-    params:
-      state:  success
-      commit: r2dbc-over-adba
-
-- name: r2dbc-over-adba-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-over-adba
-    resource: r2dbc-over-adba-pull-requests
-    trigger: true
-    version: every
-  - get: r2dbc-spi-artifactory
-    passed:
-    - r2dbc-spi
-  - put: r2dbc-over-adba-pull-requests
-    params:
-      path: r2dbc-over-adba
-      status: pending
-  - task: build
-    file: r2dbc-over-adba/ci/build.yml
-  on_failure:
-    put: r2dbc-over-adba-pull-requests
-    params:
-      path: r2dbc-over-adba
-      status: failure
-  on_success:
-    put: r2dbc-over-adba-pull-requests
-    params:
-      path: r2dbc-over-adba
-      status: success
-
-- name: r2dbc-over-adba-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-over-adba
-    resource: r2dbc-over-adba-release
-    trigger: true
-  - put: r2dbc-over-adba-status
-    params:
-      commit: r2dbc-over-adba
-      state:  pending
-  - task: build
-    file: r2dbc-over-adba/ci/release.yml
-  - put: r2dbc-over-adba-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-over-adba-artifactory
-  on_abort:
-    put: r2dbc-over-adba-status
-    params:
-      commit: r2dbc-over-adba
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-over-adba-status
-      params:
-        commit: r2dbc-over-adba
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-over-adba-status
-    params:
-      state:  success
-      commit: r2dbc-over-adba
-
-- name: r2dbc-spi
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-spi
-    trigger: true
-  - put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  pending
-  - task: build
-    file: r2dbc-spi/ci/build.yml
-  - put: r2dbc-spi-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-snapshot-local
-      folder:                   r2dbc-spi-artifactory
-  on_abort:
-    put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-spi-status
-      params:
-        commit: r2dbc-spi
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-spi-status
-    params:
-      state:  success
-      commit: r2dbc-spi
-
-- name: r2dbc-spi-pull-requests
-  public: true
-  plan:
-  - get: r2dbc-spi
-    resource: r2dbc-spi-pull-requests
-    trigger: true
-    version: every
-  - put: r2dbc-spi-pull-requests
-    params:
-      path: r2dbc-spi
-      status: pending
-  - task: build
-    file: r2dbc-spi/ci/build.yml
-  on_failure:
-    put: r2dbc-spi-pull-requests
-    params:
-      path: r2dbc-spi
-      status: failure
-  on_success:
-    put: r2dbc-spi-pull-requests
-    params:
-      path: r2dbc-spi
-      status: success
-
-- name: r2dbc-spi-release
-  serial: true
-  public: true
-  plan:
-  - get: r2dbc-spi
-    resource: r2dbc-spi-release
-    trigger: true
-  - put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  pending
-  - task: build
-    file: r2dbc-spi/ci/release.yml
-  - put: r2dbc-spi-artifactory
-    params:
-      build_number:             ${BUILD_NAME}
-      build_uri:                ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:                     libs-milestone-local
-      folder:                   r2dbc-spi-artifactory
-  on_abort:
-    put: r2dbc-spi-status
-    params:
-      commit: r2dbc-spi
-      state:  error
-  on_failure:
-    aggregate:
-    - put: r2dbc-spi-status
-      params:
-        commit: r2dbc-spi
-        state:  failure
-    - put: slack
-      params:
-        attachments:
-        - color: danger
-          fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-          text: "Build has failed"
-          title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
-          title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-  on_success:
-    put: r2dbc-spi-status
-    params:
-      state:  success
-      commit: r2dbc-spi
-
