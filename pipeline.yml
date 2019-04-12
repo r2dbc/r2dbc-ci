@@ -494,14 +494,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-bom-status
-      params:
-        state:  success
-        commit: r2dbc-bom
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-bom-status
+    params:
+      state:  success
+      commit: r2dbc-bom
 
 - name: r2dbc-bom-pull-requests
   public: true
@@ -565,14 +561,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-bom-status
-      params:
-        state:  success
-        commit: r2dbc-bom
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-bom-status
+    params:
+      state:  success
+      commit: r2dbc-bom
 
 - name: r2dbc-client
   serial: true
@@ -629,14 +621,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-client-status
-      params:
-        state:  success
-        commit: r2dbc-client
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-client-status
+    params:
+      state:  success
+      commit: r2dbc-client
 
 - name: r2dbc-client-pull-requests
   public: true
@@ -715,14 +703,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-client-status
-      params:
-        state:  success
-        commit: r2dbc-client
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-client-status
+    params:
+      state:  success
+      commit: r2dbc-client
 
 - name: r2dbc-h2
   serial: true
@@ -765,14 +749,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-h2-status
-      params:
-        state:  success
-        commit: r2dbc-h2
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-h2-status
+    params:
+      state:  success
+      commit: r2dbc-h2
 
 - name: r2dbc-h2-pull-requests
   public: true
@@ -839,14 +819,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-h2-status
-      params:
-        state:  success
-        commit: r2dbc-h2
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-h2-status
+    params:
+      state:  success
+      commit: r2dbc-h2
 
 - name: r2dbc-mssql
   serial: true
@@ -890,14 +866,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-mssql-status
-      params:
-        state:  success
-        commit: r2dbc-mssql
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-mssql-status
+    params:
+      state:  success
+      commit: r2dbc-mssql
 
 - name: r2dbc-mssql-pull-requests
   public: true
@@ -966,14 +938,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-mssql-status
-      params:
-        state:  success
-        commit: r2dbc-mssql
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-mssql-status
+    params:
+      state:  success
+      commit: r2dbc-mssql
 
 - name: r2dbc-over-adba
   serial: true
@@ -1016,14 +984,10 @@ jobs:
     #   params:
     #     alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-over-adba-status
-      params:
-        state:  success
-        commit: r2dbc-over-adba
-    # - put: slack
-    #   params:
-    #     alert_type: success
+    put: r2dbc-over-adba-status
+    params:
+      state:  success
+      commit: r2dbc-over-adba
 
 - name: r2dbc-over-adba-pull-requests
   public: true
@@ -1090,14 +1054,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-over-adba-status
-      params:
-        state:  success
-        commit: r2dbc-over-adba
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-over-adba-status
+    params:
+      state:  success
+      commit: r2dbc-over-adba
 
 - name: r2dbc-pool
   serial: true
@@ -1140,14 +1100,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-pool-status
-      params:
-        state:  success
-        commit: r2dbc-pool
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-pool-status
+    params:
+      state:  success
+      commit: r2dbc-pool
 
 - name: r2dbc-pool-pull-requests
   public: true
@@ -1211,14 +1167,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-pool-status
-      params:
-        state:  success
-        commit: r2dbc-pool
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-pool-status
+    params:
+      state:  success
+      commit: r2dbc-pool
 
 - name: r2dbc-postgresql
   serial: true
@@ -1262,14 +1214,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-postgresql-status
-      params:
-        state:  success
-        commit: r2dbc-postgresql
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-postgresql-status
+    params:
+      state:  success
+      commit: r2dbc-postgresql
 
 - name: r2dbc-postgresql-pull-requests
   public: true
@@ -1338,14 +1286,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-postgresql-status
-      params:
-        state:  success
-        commit: r2dbc-postgresql
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-postgresql-status
+    params:
+      state:  success
+      commit: r2dbc-postgresql
 
 - name: r2dbc-proxy
   serial: true
@@ -1389,14 +1333,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-proxy-status
-      params:
-        state:  success
-        commit: r2dbc-proxy
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-proxy-status
+    params:
+      state:  success
+      commit: r2dbc-proxy
 
 - name: r2dbc-proxy-pull-requests
   public: true
@@ -1465,14 +1405,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-proxy-status
-      params:
-        state:  success
-        commit: r2dbc-proxy
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-proxy-status
+    params:
+      state:  success
+      commit: r2dbc-proxy
 
 - name: r2dbc-spi
   serial: true
@@ -1511,14 +1447,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-spi-status
-      params:
-        state:  success
-        commit: r2dbc-spi
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-spi-status
+    params:
+      state:  success
+      commit: r2dbc-spi
 
 - name: r2dbc-spi-pull-requests
   public: true
@@ -1582,14 +1514,10 @@ jobs:
       params:
         alert_type: failed
   on_success:
-    aggregate:
-    - put: r2dbc-spi-status
-      params:
-        state:  success
-        commit: r2dbc-spi
-    - put: slack
-      params:
-        alert_type: success
+    put: r2dbc-spi-status
+    params:
+      state:  success
+      commit: r2dbc-spi
 
 # Docker
 - name: r2dbc-bom:latest
