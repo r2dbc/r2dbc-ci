@@ -580,6 +580,10 @@ jobs:
     trigger: true
     passed:
     - r2dbc-mssql
+  - get: r2dbc-pool-artifactory
+    trigger: true
+    passed:
+    - r2dbc-pool
   - get: r2dbc-postgresql-artifactory
     trigger: true
     passed:
@@ -639,6 +643,9 @@ jobs:
   - get: r2dbc-mssql-artifactory
     passed:
     - r2dbc-mssql
+  - get: r2dbc-pool-artifactory
+    passed:
+    - r2dbc-pool
   - get: r2dbc-postgresql-artifactory
     passed:
     - r2dbc-postgresql
