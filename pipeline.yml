@@ -68,8 +68,8 @@ resources:
 - name: r2dbc-bom-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-bom.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-bom.git
+    tag_filter: v*
 
 - name: r2dbc-bom-status
   type: github-status
@@ -117,8 +117,8 @@ resources:
 - name: r2dbc-client-release
   type: git
   source:
-    uri: https://github.com/r2dbc/r2dbc-client.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-client.git
+    tag_filter: v*
     ignore_paths:
     - ci/docker-image/*
 
@@ -151,8 +151,8 @@ resources:
 - name: r2dbc-h2-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-h2.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-h2.git
+    tag_filter: v*
 
 - name: r2dbc-h2-status
   type: github-status
@@ -183,8 +183,8 @@ resources:
 - name: r2dbc-pool-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-pool.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-pool.git
+    tag_filter: v*
 
 - name: r2dbc-pool-status
   type: github-status
@@ -232,8 +232,8 @@ resources:
 - name: r2dbc-postgresql-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-postgresql.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-postgresql.git
+    tag_filter: v*
     ignore_paths:
     - ci/docker-image/*
 
@@ -283,8 +283,8 @@ resources:
 - name: r2dbc-proxy-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-proxy.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-proxy.git
+    tag_filter: v*
     ignore_paths:
     - ci/docker-image/*
 
@@ -334,8 +334,8 @@ resources:
 - name: r2dbc-mssql-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-mssql.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-mssql.git
+    tag_filter: v*
     ignore_paths:
     - ci/docker-image/*
 
@@ -368,8 +368,8 @@ resources:
 - name: r2dbc-over-adba-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-over-adba.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-over-adba.git
+    tag_filter: v*
 
 - name: r2dbc-over-adba-status
   type: github-status
@@ -400,8 +400,8 @@ resources:
 - name: r2dbc-spi-release
   type: git
   source:
-    uri:    https://github.com/r2dbc/r2dbc-spi.git
-    branch: release
+    uri:        https://github.com/r2dbc/r2dbc-spi.git
+    tag_filter: v*
 
 - name: r2dbc-spi-status
   type: github-status
@@ -1048,18 +1048,18 @@ jobs:
       params:
         commit: r2dbc-over-adba
         state:  error
-    - put: slack
-      params:
-        alert_type: aborted
+    # - put: slack
+    #   params:
+    #     alert_type: aborted
   on_failure:
     aggregate:
     - put: r2dbc-over-adba-status
       params:
         commit: r2dbc-over-adba
         state:  failure
-    - put: slack
-      params:
-        alert_type: failed
+    # - put: slack
+    #   params:
+    #     alert_type: failed
   on_success:
     put: r2dbc-over-adba-status
     params:
