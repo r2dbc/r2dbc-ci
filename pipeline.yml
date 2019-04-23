@@ -1,19 +1,19 @@
 ---
 resource_types:
 - name: artifactory-resource
-  type: docker-image
+  type: registry-image
   source:
     repository: springio/artifactory-resource
     tag:        0.0.10
 
 - name: github-status
-  type: docker-image
+  type: registry-image
   source:
     repository: dpb587/github-status-resource
     tag:        master
 
 - name: pull-request
-  type: docker-image
+  type: registry-image
   source:
     repository: jtarchie/pr
     tag:        latest
@@ -25,41 +25,30 @@ resource_types:
 
 resources:
 - name: openjdk:8-jdk
-  type: docker-image
+  type: registry-image
+  icon: docker
   source:
     repository: openjdk
     tag:        8-jdk
 
-- name: r2dbc-bom:latest
-  type: docker-image
-  source:
-    repository: r2dbc/r2dbc-bom
-    email:      ((docker-email))
-    username:   ((docker-username))
-    password:   ((docker-password))
-
 - name: r2dbc-bom
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-bom.git
 
 - name: r2dbc-bom-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
     password: ((artifactory-password))
     build_name: R2DBC BOM
 
-- name: r2dbc-bom-docker-image
-  type: git
-  source:
-    uri: https://github.com/r2dbc/r2dbc-bom.git
-    paths:
-    - ci/Dockerfile
-
 - name: r2dbc-bom-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-bom
@@ -67,33 +56,38 @@ resources:
 
 - name: r2dbc-bom-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-bom.git
     tag_filter: v*
 
 - name: r2dbc-bom-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-bom
 
 - name: r2dbc-client:latest
-  type: docker-image
+  type: registry-image
+  icon: docker
   source:
     repository: r2dbc/r2dbc-client
-    email:      ((docker-email))
     username:   ((docker-username))
     password:   ((docker-password))
 
 - name: r2dbc-client
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
     ignore_paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-client-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -102,13 +96,16 @@ resources:
 
 - name: r2dbc-client-docker-image
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
     paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-client-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-client
@@ -116,25 +113,30 @@ resources:
 
 - name: r2dbc-client-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-client.git
     tag_filter: v*
     ignore_paths:
-    - ci/docker-image/*
+    - ci/builder.yml
+    - ci/Dockerfile
 
 - name: r2dbc-client-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-client
 
 - name: r2dbc-h2
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-h2.git
 
 - name: r2dbc-h2-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -143,6 +145,7 @@ resources:
 
 - name: r2dbc-h2-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-h2
@@ -150,23 +153,27 @@ resources:
 
 - name: r2dbc-h2-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-h2.git
     tag_filter: v*
 
 - name: r2dbc-h2-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-h2
 
 - name: r2dbc-pool
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-pool.git
 
 - name: r2dbc-pool-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -175,6 +182,7 @@ resources:
 
 - name: r2dbc-pool-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-pool
@@ -182,33 +190,38 @@ resources:
 
 - name: r2dbc-pool-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-pool.git
     tag_filter: v*
 
 - name: r2dbc-pool-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-pool
 
 - name: r2dbc-postgresql:latest
-  type: docker-image
+  type: registry-image
+  icon: docker
   source:
     repository: r2dbc/r2dbc-postgresql
-    email:      ((docker-email))
     username:   ((docker-username))
     password:   ((docker-password))
 
 - name: r2dbc-postgresql
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
     ignore_paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-postgresql-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -217,13 +230,16 @@ resources:
 
 - name: r2dbc-postgresql-docker-image
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
     paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-postgresql-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-postgresql
@@ -231,35 +247,41 @@ resources:
 
 - name: r2dbc-postgresql-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-postgresql.git
     tag_filter: v*
     ignore_paths:
-    - ci/docker-image/*
+    - ci/builder.yml
+    - ci/Dockerfile
 
 - name: r2dbc-postgresql-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-postgresql
 
 - name: r2dbc-proxy:latest
-  type: docker-image
+  type: registry-image
+  icon: docker
   source:
     repository: r2dbc/r2dbc-proxy
-    email:      ((docker-email))
     username:   ((docker-username))
     password:   ((docker-password))
 
 - name: r2dbc-proxy
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-proxy.git
     ignore_paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-proxy-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -268,13 +290,16 @@ resources:
 
 - name: r2dbc-proxy-docker-image
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-proxy.git
     paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-proxy-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-proxy
@@ -282,35 +307,41 @@ resources:
 
 - name: r2dbc-proxy-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-proxy.git
     tag_filter: v*
     ignore_paths:
-    - ci/docker-image/*
+    - ci/builder.yml
+    - ci/Dockerfile
 
 - name: r2dbc-proxy-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-proxy
 
 - name: r2dbc-mssql:latest
-  type: docker-image
+  type: registry-image
+  icon: docker
   source:
     repository: r2dbc/r2dbc-mssql
-    email:      ((docker-email))
     username:   ((docker-username))
     password:   ((docker-password))
 
 - name: r2dbc-mssql
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-mssql.git
     ignore_paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-mssql-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -319,13 +350,16 @@ resources:
 
 - name: r2dbc-mssql-docker-image
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-mssql.git
     paths:
+    - ci/builder.yml
     - ci/Dockerfile
 
 - name: r2dbc-mssql-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-mssql
@@ -333,25 +367,30 @@ resources:
 
 - name: r2dbc-mssql-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-mssql.git
     tag_filter: v*
     ignore_paths:
-    - ci/docker-image/*
+    - ci/builder.yml
+    - ci/Dockerfile
 
 - name: r2dbc-mssql-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-mssql
 
 - name: r2dbc-over-adba
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-over-adba.git
 
 - name: r2dbc-over-adba-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -360,6 +399,7 @@ resources:
 
 - name: r2dbc-over-adba-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-over-adba
@@ -367,23 +407,27 @@ resources:
 
 - name: r2dbc-over-adba-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-over-adba.git
     tag_filter: v*
 
 - name: r2dbc-over-adba-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-over-adba
 
 - name: r2dbc-spi
   type: git
+  icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-spi.git
 
 - name: r2dbc-spi-artifactory
   type: artifactory-resource
+  icon: package-variant
   source:
     uri: https://repo.spring.io
     username: ((artifactory-username))
@@ -392,6 +436,7 @@ resources:
 
 - name: r2dbc-spi-pull-requests
   type: pull-request
+  icon: source-pull
   source:
     access_token: ((github-access-token))
     repo: r2dbc/r2dbc-spi
@@ -399,18 +444,21 @@ resources:
 
 - name: r2dbc-spi-release
   type: git
+  icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-spi.git
     tag_filter: v*
 
 - name: r2dbc-spi-status
   type: github-status
+  icon: eye-check
   source:
     access_token: ((github-access-token))
     repository:   r2dbc/r2dbc-spi
 
 - name: slack
   type: slack-alert
+  icon: slack
   source:
     url: ((slack))
 
@@ -450,7 +498,6 @@ groups:
   - r2dbc-spi-release
 - name: docker
   jobs:
-  - r2dbc-bom:latest
   - r2dbc-client:latest
   - r2dbc-postgresql:latest
   - r2dbc-proxy:latest
@@ -591,8 +638,10 @@ jobs:
   - get: r2dbc-spi-artifactory
     trigger: true
     passed:
+    - r2dbc-h2
+    - r2dbc-mssql
+    - r2dbc-pool
     - r2dbc-postgresql
-    - r2dbc-spi
   - put: r2dbc-client-status
     params:
       commit: r2dbc-client
@@ -1527,62 +1576,74 @@ jobs:
       commit: r2dbc-spi
 
 # Docker
-- name: r2dbc-bom:latest
-  public: true
-  plan:
-  - aggregate:
-    - get: r2dbc-bom-docker-image
-      trigger: true
-    - get: openjdk:8-jdk
-      trigger: true
-  - put: r2dbc-bom:latest
-    params:
-      build: r2dbc-bom-docker-image/ci
-
 - name: r2dbc-client:latest
   public: true
   plan:
   - aggregate:
-    - get: r2dbc-client-docker-image
+    - get: builder
+      resource: r2dbc-client-docker-image
       trigger: true
     - get: openjdk:8-jdk
       trigger: true
+  - task: repository-image
+    file: builder/ci/builder.yml
+    privileged: true
+    params:
+      REPOSITORY: r2dbc/r2dbc-client
   - put: r2dbc-client:latest
     params:
-      build: r2dbc-client-docker-image/ci
+      image: image/image.tar
 
 - name: r2dbc-postgresql:latest
   public: true
   plan:
   - aggregate:
-    - get: r2dbc-postgresql-docker-image
+    - get: builder
+      resource: r2dbc-postgresql-docker-image
       trigger: true
     - get: openjdk:8-jdk
       trigger: true
+  - task: repository-image
+    file: builder/ci/builder.yml
+    privileged: true
+    params:
+      REPOSITORY: r2dbc/r2dbc-postgresql
   - put: r2dbc-postgresql:latest
     params:
-      build: r2dbc-postgresql-docker-image/ci
+      image: image/image.tar
 
 - name: r2dbc-proxy:latest
   public: true
   plan:
   - aggregate:
-    - get: r2dbc-proxy-docker-image
+    - get: builder
+      resource: r2dbc-proxy-docker-image
       trigger: true
     - get: openjdk:8-jdk
       trigger: true
+  - task: repository-image
+    file: builder/ci/builder.yml
+    privileged: true
+    params:
+      REPOSITORY: r2dbc/r2dbc-proxy
   - put: r2dbc-proxy:latest
     params:
-      build: r2dbc-proxy-docker-image/ci
+      image: image/image.tar
 
 - name: r2dbc-mssql:latest
   public: true
   plan:
   - aggregate:
-    - get: r2dbc-mssql-docker-image
+    - get: builder
+      resource: r2dbc-mssql-docker-image
       trigger: true
     - get: openjdk:8-jdk
       trigger: true
+  - task: repository-image
+    file: builder/ci/builder.yml
+    privileged: true
+    params:
+      REPOSITORY: r2dbc/r2dbc-mssql
   - put: r2dbc-mssql:latest
     params:
-      build: r2dbc-mssql-docker-image/ci
+      image: image/image.tar
