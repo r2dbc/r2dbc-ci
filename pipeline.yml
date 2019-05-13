@@ -59,7 +59,7 @@ resources:
   icon: github-circle
   source:
     uri:        https://github.com/r2dbc/r2dbc-bom.git
-    tag_filter: v*
+    tag_filter: "*"
 
 - name: r2dbc-bom-status
   type: github-status
