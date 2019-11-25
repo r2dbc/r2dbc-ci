@@ -36,6 +36,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-bom.git
+    branch: 0.8.x
 
 - name: r2dbc-bom-artifactory
   type: artifactory-resource
@@ -81,6 +82,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
+    branch: 0.8.x
     ignore_paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -99,6 +101,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-client.git
+    branch: 0.8.x
     paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -133,6 +136,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-h2.git
+    branch: 0.8.x
 
 - name: r2dbc-h2-artifactory
   type: artifactory-resource
@@ -170,6 +174,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-pool.git
+    branch: 0.8.x
 
 - name: r2dbc-pool-artifactory
   type: artifactory-resource
@@ -215,6 +220,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
+    branch: 0.8.x
     ignore_paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -233,6 +239,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-postgresql.git
+    branch: 0.8.x
     paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -275,6 +282,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-proxy.git
+    branch: 0.8.x
     ignore_paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -293,6 +301,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-proxy.git
+    branch: 0.8.x
     paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -335,6 +344,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-mssql.git
+    branch: 0.8.x
     ignore_paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -353,6 +363,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-mssql.git
+    branch: 0.8.x
     paths:
     - ci/builder.yml
     - ci/Dockerfile
@@ -387,6 +398,7 @@ resources:
   icon: github-circle
   source:
     uri: https://github.com/r2dbc/r2dbc-spi.git
+    branch: 0.8.x
 
 - name: r2dbc-spi-artifactory
   type: artifactory-resource
