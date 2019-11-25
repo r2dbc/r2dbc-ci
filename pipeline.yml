@@ -547,7 +547,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-bom-artifactory
   on_abort:
     aggregate:
@@ -698,7 +698,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-client-artifactory
   on_abort:
     aggregate:
@@ -814,7 +814,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-h2-artifactory
   on_abort:
     aggregate:
@@ -933,7 +933,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-mssql-artifactory
   on_abort:
     aggregate:
@@ -1046,7 +1046,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-pool-artifactory
   on_abort:
     aggregate:
@@ -1165,7 +1165,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-postgresql-artifactory
   on_abort:
     aggregate:
@@ -1284,7 +1284,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-proxy-artifactory
   on_abort:
     aggregate:
@@ -1393,7 +1393,7 @@ jobs:
     params:
       build_number: "${BUILD_PIPELINE_NAME}-${BUILD_JOB_NAME}-${BUILD_NAME}"
       build_uri:    ${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}
-      repo:         libs-release-local
+      repo:         libs-milestone-local
       folder:       r2dbc-spi-artifactory
   on_abort:
     aggregate:
